@@ -228,18 +228,24 @@ class AppleMusicSongInterface(AppleMusicInterface):
     async def get_stream_info(
         self,
         codec: SongCodec,
+        alac_max_sample_rate: int,
         song_metadata: dict | None = None,
         webplayback: dict | None = None,
     ) -> StreamInfoAv | None:
         if codec.is_legacy():
             return await self._get_stream_info_legacy(webplayback, codec)
         else:
-            return await self._get_stream_info(song_metadata, codec)
+            return await self._get_stream_info(
+                song_metadata,
+                codec,
+                alac_max_sample_rate,
+            )
 
     async def _get_stream_info(
         self,
         song_metadata: dict,
         codec: SongCodec,
+        alac_max_sample_rate: int,
     ) -> StreamInfoAv | None:
         if "extendedAssetUrls" not in song_metadata["attributes"]:
             song_metadata = (
@@ -263,6 +269,7 @@ class AppleMusicSongInterface(AppleMusicInterface):
             playlist = self._get_playlist_from_codec(
                 m3u8_master_data,
                 codec,
+                alac_max_sample_rate,
             )
 
         if playlist is None:
@@ -341,8 +348,16 @@ class AppleMusicSongInterface(AppleMusicInterface):
             "com.apple.hls.audioAssetMetadata",
         )
 
+    def _get_alac_sample_rate(self, audio_codec: str) -> int | None:
+        # ALAC track labels include sample rate (for example: audio-alac-stereo-48000-24).
+        rates = [int(value) for value in re.findall(r"\d+", audio_codec) if int(value) >= 8000]
+        return rates[0] if rates else None
+
     def _get_playlist_from_codec(
-        self, m3u8_data: dict, codec: SongCodec
+        self,
+        m3u8_data: dict,
+        codec: SongCodec,
+        alac_max_sample_rate: int,
     ) -> dict | None:
         matching_playlists = [
             playlist
@@ -351,6 +366,17 @@ class AppleMusicSongInterface(AppleMusicInterface):
                 SONG_CODEC_REGEX_MAP[codec.value], playlist["stream_info"]["audio"]
             )
         ]
+
+        if codec == SongCodec.ALAC:
+            matching_playlists = [
+                playlist
+                for playlist in matching_playlists
+                if (
+                    (sample_rate := self._get_alac_sample_rate(playlist["stream_info"]["audio"]))
+                    is None
+                    or sample_rate <= alac_max_sample_rate
+                )
+            ]
 
         if not matching_playlists:
             return None

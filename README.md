@@ -152,6 +152,7 @@ The file is created automatically on first run. Command-line arguments override 
 | `--truncate`                    | Max filename length                                               | -                                              |
 | **Song Options**                |                                                                   |                                                |
 | `--song-codec-priority`         | Comma-separated codec priority                                    | `aac-legacy`                                   |
+| `--alac-max-sample-rate`        | Max ALAC sample rate                                               | `48000`                                        |
 | `--synced-lyrics-format`        | Synced lyrics format                                              | `lrc`                                          |
 | `--no-synced-lyrics`            | Don't download synced lyrics                                      | `false`                                        |
 | `--synced-lyrics-only`          | Download only synced lyrics                                       | `false`                                        |
@@ -228,6 +229,12 @@ Use ISO 639-1 language codes (e.g., `en-US`, `es-ES`, `ja-JP`, `pt-BR`). Don't a
 - `ac3` - AC3 640kbps
 - `alac` - ALAC up to 24-bit/192kHz (unsupported)
 - `ask` - Interactive experimental codec selection
+
+### ALAC Max Sample Rate
+
+- `48000` - Limit ALAC stream selection to up to 48kHz
+- `96000` - Limit ALAC stream selection to up to 96kHz
+- `192000` - Limit ALAC stream selection to up to 192kHz
 
 ### Synced Lyrics Format
 

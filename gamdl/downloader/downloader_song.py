@@ -14,6 +14,7 @@ class AppleMusicSongDownloader(AppleMusicBaseDownloader):
         base_downloader: AppleMusicBaseDownloader,
         interface: AppleMusicSongInterface,
         codec_priority: SongCodec = [SongCodec.AAC_LEGACY],
+        alac_max_sample_rate: int = 48000,
         synced_lyrics_format: SyncedLyricsFormat = SyncedLyricsFormat.LRC,
         no_synced_lyrics: bool = False,
         synced_lyrics_only: bool = False,
@@ -23,6 +24,7 @@ class AppleMusicSongDownloader(AppleMusicBaseDownloader):
         self.__dict__.update(base_downloader.__dict__)
         self.interface = interface
         self.codec_priority = codec_priority
+        self.alac_max_sample_rate = alac_max_sample_rate
         self.synced_lyrics_format = synced_lyrics_format
         self.no_synced_lyrics = no_synced_lyrics
         self.synced_lyrics_only = synced_lyrics_only
@@ -81,6 +83,7 @@ class AppleMusicSongDownloader(AppleMusicBaseDownloader):
         for codec in self.codec_priority:
             download_item.stream_info = await self.interface.get_stream_info(
                 codec,
+                self.alac_max_sample_rate,
                 song_metadata,
                 webplayback,
             )

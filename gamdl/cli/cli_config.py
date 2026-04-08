@@ -384,6 +384,15 @@ class CliConfig:
             type=Csv(SongCodec),
         ),
     ]
+    alac_max_sample_rate: Annotated[
+        int,
+        option(
+            "--alac-max-sample-rate",
+            help="Max ALAC sample rate",
+            default=song_downloader_sig.parameters["alac_max_sample_rate"].default,
+            type=click.Choice([48000, 96000, 192000]),
+        ),
+    ]
     synced_lyrics_format: Annotated[
         SyncedLyricsFormat,
         option(

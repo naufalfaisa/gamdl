@@ -143,6 +143,7 @@ async def main(config: CliConfig):
         base_downloader=base_downloader,
         interface=song_interface,
         codec_priority=config.song_codec_piority,
+        alac_max_sample_rate=int(config.alac_max_sample_rate),
         synced_lyrics_format=config.synced_lyrics_format,
         no_synced_lyrics=config.no_synced_lyrics,
         synced_lyrics_only=config.synced_lyrics_only,
