@@ -1,3 +1,4 @@
-from .cli.cli import main
+from gamdl.cli.cli import main
 
-main()
+if __name__ == "__main__":
+    main()
