@@ -64,6 +64,8 @@ class AppleMusicMusicVideoInterface:
         self,
         itunes_page_metadata: dict,
     ) -> str | None:
+        log = logger.bind(action="get_m3u8_master_url_from_itunes_page_metadata")
+
         stream_url = itunes_page_metadata["offers"][0]["assets"][0].get("hlsUrl")
         if not stream_url:
             return None
@@ -77,12 +79,14 @@ class AppleMusicMusicVideoInterface:
         ).geturl()
 
         m3u8_master_url = m3u8_master_url.replace(
-            "itunes.apple.com",
+            "play-edge.itunes.apple.com",
             "play.itunes.apple.com",
         ).replace(
             "MZPlayLocal.woa",
             "MZPlay.woa",
         )
+
+        log.debug("success", m3u8_master_url=m3u8_master_url)
 
         return m3u8_master_url
 
