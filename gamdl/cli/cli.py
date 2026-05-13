@@ -129,6 +129,10 @@ async def main(config: CliConfig):
         artist_auto_select=config.artist_auto_select,
     )
 
+    collection_select_items_function = (
+        interactive_prompts.ask_collection_tracks if config.search else None
+    )
+
     base_interface = await AppleMusicBaseInterface.create(
         apple_music_api=apple_music_api,
         cover_format=config.cover_format,
@@ -165,6 +169,7 @@ async def main(config: CliConfig):
         uploaded_video=uploaded_video_interface,
         artist_select_media_type_function=interactive_prompts.ask_artist_media_type,
         artist_select_items_function=interactive_prompts.ask_artist_select_items,
+        collection_select_items_function=collection_select_items_function,
         flat_filter_function=flat_filter,
     )
 
@@ -214,7 +219,42 @@ async def main(config: CliConfig):
         synced_lyrics_only=config.synced_lyrics_only,
     )
 
-    if config.read_urls_as_txt:
+    if config.search:
+        search_query = " ".join(config.urls).strip()
+        if not search_query:
+            search_query = click.prompt(
+                f"Search query for {config.search}",
+                type=str,
+            ).strip()
+
+        search_results = await apple_music_api.get_search_results(
+            term=search_query,
+            types=config.search,
+        )
+        result_items = search_results.get("results", {}).get(config.search, {}).get(
+            "data",
+            [],
+        )
+
+        if not result_items:
+            logger.warning(f'No results found for "{search_query}"')
+            return
+
+        selected_result = await interactive_prompts.ask_search_result(
+            config.search,
+            result_items,
+        )
+
+        selected_url = selected_result.get("attributes", {}).get("url")
+        if not selected_url:
+            media_type = selected_result.get("type", "").removesuffix("s")
+            selected_url = (
+                f"https://music.apple.com/{apple_music_api.storefront}/{media_type}"
+                f"/{selected_result['id']}"
+            )
+
+        urls = [selected_url]
+    elif config.read_urls_as_txt:
         urls_from_file = []
         for url in config.urls:
             if Path(url).is_file() and Path(url).exists():

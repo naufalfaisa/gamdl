@@ -1,3 +1,4 @@
+import click
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 import m3u8
@@ -230,3 +231,115 @@ class InteractivePrompts:
         ).execute_async()
 
         return selected
+
+    @staticmethod
+    def _format_search_result_name(item: dict) -> str:
+        attributes = item.get("attributes", {})
+        title = attributes.get("name", "Unknown")
+
+        if item.get("type") == "artists":
+            genre_names = attributes.get("genreNames", [])
+            if genre_names:
+                return f'{title} | {", ".join(genre_names[:2])}'
+            return title
+
+        parts = [title]
+        for key in ("artistName", "releaseDate", "trackCount"):
+            value = attributes.get(key)
+            if value:
+                parts.append(str(value))
+
+        return " | ".join(parts)
+
+    @staticmethod
+    def _parse_track_selection(selection: str, total: int) -> list[int] | None:
+        tokens = [token.strip().lower() for token in selection.split(",") if token.strip()]
+        if not tokens:
+            return None
+
+        if len(tokens) == 1 and tokens[0] == "all":
+            return list(range(1, total + 1))
+
+        selected_indices = []
+        for token in tokens:
+            if token == "all":
+                return list(range(1, total + 1))
+
+            if "-" in token:
+                start_text, end_text = token.split("-", 1)
+                if not start_text.isdigit() or not end_text.isdigit():
+                    return None
+                start_index = int(start_text)
+                end_index = int(end_text)
+                if start_index > end_index:
+                    start_index, end_index = end_index, start_index
+                selected_indices.extend(range(start_index, end_index + 1))
+            else:
+                if not token.isdigit():
+                    return None
+                selected_indices.append(int(token))
+
+        filtered_indices = []
+        for index in sorted(set(selected_indices)):
+            if 1 <= index <= total:
+                filtered_indices.append(index)
+
+        if not filtered_indices:
+            return None
+
+        return filtered_indices
+
+    async def ask_search_result(
+        self,
+        search_type: str,
+        results: list[dict],
+    ) -> dict:
+        choices = [
+            Choice(
+                name=self._format_search_result_name(result),
+                value=result,
+            )
+            for result in results
+            if result.get("attributes")
+        ]
+
+        selected = await inquirer.select(
+            message=f"Select which {search_type} to download:",
+            choices=choices,
+        ).execute_async()
+
+        return selected
+
+    async def ask_collection_tracks(
+        self,
+        collection_metadata: dict,
+        tracks: list[dict],
+    ) -> list[dict]:
+        collection_name = collection_metadata.get("attributes", {}).get(
+            "name",
+            "Unknown",
+        )
+
+        click.echo(f'Selected collection: {collection_name}')
+        click.echo("Available tracks:")
+        for index, track in enumerate(tracks, 1):
+            attributes = track.get("attributes", {})
+            track_name = attributes.get("name", "Unknown")
+            artist_name = attributes.get("artistName")
+            line = f"  {index:>2}. {track_name}"
+            if artist_name:
+                line += f" - {artist_name}"
+            click.echo(line)
+
+        while True:
+            selection = click.prompt(
+                "Select tracks to download (press Enter for all, or use 1-5, 1,3,7)",
+                default="all",
+                show_default=True,
+            )
+
+            selected_indices = self._parse_track_selection(selection, len(tracks))
+            if selected_indices:
+                return [tracks[index - 1] for index in selected_indices]
+
+            click.echo("Invalid selection, try again.")

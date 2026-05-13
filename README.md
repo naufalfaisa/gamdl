@@ -101,6 +101,17 @@ gamdl "https://music.apple.com/us/album/whenever-you-need-somebody-2022-remaster
 gamdl "https://music.apple.com/us/artist/rick-astley/669771"
 ```
 
+**Search Apple Music:**
+
+```bash
+gamdl --search artists "Rick Astley"
+gamdl --search albums "Whenever You Need Somebody"
+```
+
+Supported search types: `songs`, `artists`, `albums`, `playlists`, `music-videos`.
+
+When you select an album or playlist from search results, you can press Enter for all tracks, or type a range such as `1-5`. Multiple selections are also supported with comma-separated values like `1,3,7`.
+
 **Interactive Prompt Controls:**
 
 | Key            | Action            |
@@ -126,6 +137,7 @@ The file is created automatically on first run. Command-line arguments override 
 | Option                          | Description                                                       | Default                                        |
 | ------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
 | **General Options**             |                                                                   |                                                |
+| `--search`                      | Search Apple Music by media type                                  | -                                              |
 | `--read-urls-as-txt`, `-r`      | Read URLs from text files                                         | `false`                                        |
 | `--config-path`                 | Config file path                                                  | `<home>/.gamdl/config.ini`                     |
 | `--log-level`                   | Logging level                                                     | `INFO`                                         |

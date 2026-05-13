@@ -32,6 +32,9 @@ class AppleMusicInterface:
         artist_select_items_function: (
             Callable[[ArtistMediaType, list[dict]], list[dict] | None] | None
         ) = None,
+        collection_select_items_function: (
+            Callable[[dict, list[dict]], list[dict] | None] | None
+        ) = None,
         flat_filter_function: Callable[[dict], Any] | None = None,
         concurrency: int = 1,
         disallowed_media_types: list[str] | None = None,
@@ -41,6 +44,7 @@ class AppleMusicInterface:
         self.uploaded_video = uploaded_video
         self.artist_select_media_type_function = artist_select_media_type_function
         self.artist_select_items_function = artist_select_items_function
+        self.collection_select_items_function = collection_select_items_function
         self.flat_filter_function = flat_filter_function
         self.concurrency = concurrency
         self.disallowed_media_types = disallowed_media_types
@@ -207,19 +211,28 @@ class AppleMusicInterface:
         yield base_media
 
         tracks = base_media.media_metadata["relationships"]["tracks"]["data"]
+        if self.collection_select_items_function:
+            selected_tracks = self.collection_select_items_function(
+                base_media.media_metadata,
+                tracks,
+            )
+            if asyncio.iscoroutine(selected_tracks):
+                selected_tracks = await selected_tracks
+            tracks = selected_tracks
+
         tasks = [
             (
                 self._get_song_media(
                     media_id=track["id"],
                     index=index,
-                    total=base_media.media_metadata["attributes"]["trackCount"],
+                    total=len(tracks),
                     media_metadata=track,
                 )
                 if track["type"] in {"songs", "library-songs"}
                 else self._get_music_video_media(
                     media_id=track["id"],
                     index=index,
-                    total=base_media.media_metadata["attributes"]["trackCount"],
+                    total=len(tracks),
                     media_metadata=track,
                 )
             )
@@ -276,11 +289,21 @@ class AppleMusicInterface:
 
         yield base_media
 
+        if self.collection_select_items_function:
+            selected_tracks = self.collection_select_items_function(
+                base_media.media_metadata,
+                tracks,
+            )
+            if asyncio.iscoroutine(selected_tracks):
+                selected_tracks = await selected_tracks
+            tracks = selected_tracks
+
         tasks = [
             (
                 self._get_song_media(
                     media_id=track["id"],
                     index=index,
+                    total=len(tracks),
                     media_metadata=track,
                     playlist_metadata=base_media.media_metadata,
                 )
@@ -288,6 +311,7 @@ class AppleMusicInterface:
                 else self._get_music_video_media(
                     media_id=track["id"],
                     index=index,
+                    total=len(tracks),
                     media_metadata=track,
                     playlist_metadata=base_media.media_metadata,
                 )

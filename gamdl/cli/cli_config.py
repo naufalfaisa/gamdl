@@ -59,6 +59,24 @@ class CliConfig:
             required=True,
         ),
     ]
+    search: Annotated[
+        str | None,
+        option(
+            "--search",
+            help="Search Apple Music by type and choose a result",
+            default=None,
+            type=click.Choice(
+                [
+                    "songs",
+                    "artists",
+                    "albums",
+                    "playlists",
+                    "music-videos",
+                ],
+                case_sensitive=False,
+            ),
+        ),
+    ]
     read_urls_as_txt: Annotated[
         bool,
         option(
